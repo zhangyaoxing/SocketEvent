@@ -58,7 +58,7 @@ MessageManager.prototype = {
 	listen: function(port, host) {
 		var that = this;
 
-		var client = MongoClient.connect(DB_CONFIG.url, function(err, db) {
+		MongoClient.connect(DB_CONFIG.url, function(err, db) {
 			if (err) {
 				var error = getError("DatabaseUnavailable");
 				this.logger.fatal("无数连接到数据库。", error);
@@ -86,7 +86,7 @@ MessageManager.prototype = {
 			}, 600000);
 		});
 	},
-	// 请求示例
+	// request data sample
 	// data = {
 	// 	"requestId": "",	// mandatory. unique ID of each request.
 	// 	"senderId": "",	// mandatory. unique name of sender.
@@ -105,13 +105,13 @@ MessageManager.prototype = {
 		}
 
 		var subscribers = this.eventSubscribers[data.event];
-		// 这个应用是否已经订阅过
+		// check if this client has subscribed before
 		var existed = _.find(subscribers, function(subscriber) {
 			return subscriber.senderId = data.senderId;
 		});
 
 		if (existed) {
-			// 已经订阅，关闭之前的连接，用现在的连接代替。
+			// client already subscribed. close previous connection, use current one instead.
 			var existedSocket = existed.socket;
 			existed.socket = socket;
 			if (existedSocket.connected) {
@@ -137,7 +137,7 @@ MessageManager.prototype = {
 		delete subscribers[subscriberId];
 		this.logger.info(util.format("已退订[%s]", subscriberId));
 	},
-	// 请求示例
+	// request sample
 	// data = {
 	// 	"requestId": "",	// mandatory. unique ID of each request.
 	// 	"senderId": "",	// mandatory. unique name of sender.
@@ -169,7 +169,7 @@ MessageManager.prototype = {
 		}
 
 		var that = this;
-		// 查找这个事件有多少订阅者
+		// check how many subscribers are there.
 		var subscribers = _.map(this.eventSubscribers[data.event], function(elm) {
 			return {
 				subscriberId: elm.senderId,
@@ -216,7 +216,8 @@ MessageManager.prototype = {
 	dispatch: function() {
 		var that = this;
 
-		// 找出READY状态的事件，进行处理。一次只处理一条数据。
+		// find the earliest event with status READY or RETRY.
+		// only one record is proceeded at one time.
 		this.db.collection("queue").findAndModify({
 			"$or": [{
 				state: STATE.READY
@@ -238,19 +239,19 @@ MessageManager.prototype = {
 			}
 
 			if (record) {
-				// 发起下一个请求处理更多数据
+				// send another event to process more record.
 				setTimeout(this.dispatch.bind(this), 10);
 			} else {
-				// 已没有更多需要处理的数据
+				// no more record to process.
 				return;
 			}
 
 			var event = record.event;
 			var subscribers = record.subscribers;
-			// 查找所有需要处理的subscriber
+			// looking up ready subscribers
 			var readySubscribers = [];
 			_.each(subscribers, function(s) {
-				// TODO: 实现可控制的重试时间
+				// TODO: control the retry time.
 				if ((s.remainingRetryTimes > 0 || s.remainingRetryTimes == -1) && (s.state == STATE.READY || s.state == STATE.RETRY) && (s.lastOperateTime == null || (new Date() - s.lastOperateTime) > 60000)) {
 					readySubscribers.push(s);
 					s.remainingRetryTimes -= s.remainingRetryTimes > 0 ? 1 : 0;
@@ -259,26 +260,24 @@ MessageManager.prototype = {
 				}
 			});
 
-			// 批量更新数据库，设置当前记录的subscribers为正在处理
+			// batch update all the subscriber status in current record to PROCESSING
 			this.db.collection("queue").update({
 				"_id": record["_id"]
 			}, record, function(err) {
 				if (err) {
-					// 无法更新数据库，分发失败
+					// unable to update subscriber state from READY/RETRY to PROCESSING 
 					this.logger.fatal("无法更新subscribers的请求状态READY/RETRY->PROCESSING", err);
-					// TODO: 尝试改回READY或RETRY状态
+					// TODO: try to revert record state from PROCESSING back to READY/RETRY
 					return;
 				}
 
 				var subscriberSockets = _.indexBy(this.eventSubscribers[event], 'subscriberId');
-				// 成功更新数据库，开始通知客户端
-				// 并行处理一条记录中的所有订阅者
+				// database updated, notify clients.
+				// process all clients in parallel.
 				async.map(readySubscribers, (function(subscriber, callback) {
-					// 获取socket
-					// TODO: 如果socket不存在的错误处理
+					// TODO: what if socket doesn't exist?
 					var socket = subscriberSockets[subscriber.subscriberId].socket;
-					// 数据库更新成功，向客户端推送事件
-					// 如果规定时间内没有返回任何信息，视为失败
+					// if request doesn't return in time, treat as a failure.
 					var timeoutHandler = setTimeout(function() {
 						that.unsubscribe(event, subscriber.subscriberId);
 						callback(null, {
@@ -287,15 +286,16 @@ MessageManager.prototype = {
 						})
 					}, record.timeout);
 					socket.emit(event, doc.args, function(data) {
+						// cancel the failure notification because it's succeeded.
 						clearTimeout(timeoutHandler);
-						// 通知并行调用结果
+						// notify parallel result
 						callback(null, {
 							subscriberId: subscriber.subscriberId,
 							status: data.status
 						});
 					});
 				}).bind(that), function(err, results) {
-					// 因为不会返回err，所以err一定不存在。通过判断results来判断执行是否成功
+					// parallel finished. update subscriber state.
 					_.each(subscribers, function(s) {
 						var subscriberStatus = _.find(results, function(status) {
 							return status.subscriberId == s.subscriberId;
@@ -311,6 +311,38 @@ MessageManager.prototype = {
 							}
 						}
 					})
+
+					var states = _.countBy(subscribers, function(s) {
+						return s.state;
+					});
+
+					// normally there should be only RETRY/DONE/FAIL.
+					// in rare situations there could be other states.
+					var done = states[STATE.DONE];
+					var retry = states[STATE.RETRY];
+					var fail = states[STATE.FAIL];
+					var ready = states[STATE.READY];
+					var processing = states[STATE.PROCESSING];
+					if (done && !retry && !fail && !ready && !processing) {
+						// all done
+						record.state = STATE.DONE;
+					} else if (!retry && !ready && !processing) {
+						// nothing else than DONE/FAIL. all DONE is filtered out so FAIL.
+						record.state = STATE.FAIL;
+					} else {
+						// retriable
+						record.state = STATE.RETRY;
+					}
+
+					this.db.collection("queue").update({
+						"_id": record["_id"]
+					}, record, function(err) {
+						if (err) {
+							// unable to update subscriber state from READY/RETRY to PROCESSING 
+							this.logger.fatal("Cannot finalize states.\n" + JSON.stringify(record), err);
+							return;
+						}
+					});
 				});
 			});
 		});
