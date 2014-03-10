@@ -61,7 +61,7 @@ MessageManager.prototype = {
 		MongoClient.connect(DB_CONFIG.url, function(err, db) {
 			if (err) {
 				var error = getError("DatabaseUnavailable");
-				this.logger.fatal("无数连接到数据库。", error);
+				this.logger.fatal("Database not available.", err);
 				return;
 			}
 
@@ -107,7 +107,7 @@ MessageManager.prototype = {
 		var subscribers = this.eventSubscribers[data.event];
 		// check if this client has subscribed before
 		var existed = _.find(subscribers, function(subscriber) {
-			return subscriber.senderId = data.senderId;
+			return subscriber.senderId == data.senderId;
 		});
 
 		if (existed) {
@@ -116,7 +116,7 @@ MessageManager.prototype = {
 			existed.socket = socket;
 			if (existedSocket.connected) {
 				existedSocket.disconnect();
-				this.logger.warn("客户端和服务端已经存在连接。", getError("AlreadyConnected", senderId));
+				this.logger.warn("Client already connected.", getError("AlreadyConnected", senderId));
 			}
 		} else {
 			subscribers.push({
@@ -135,7 +135,7 @@ MessageManager.prototype = {
 			subscribers[subscriberId].socket.disconnect();
 		}
 		delete subscribers[subscriberId];
-		this.logger.info(util.format("已退订[%s]", subscriberId));
+		this.logger.info(util.format("Unsubscribed [%s]", subscriberId));
 	},
 	// request sample
 	// data = {
@@ -146,7 +146,7 @@ MessageManager.prototype = {
 	// 	"args": {},	// optional. only available when action=command
 	// }
 	enqueue: function(data, callback) {
-		// 数据示例
+		// data sample
 		// {
 		// 	"_id": "",	// mandatory. 
 		// 	"requestId": "",	// mandatory. unique ID of each request.
@@ -190,7 +190,7 @@ MessageManager.prototype = {
 			"subscribers": subscribers
 		}, function(err, doc) {
 			if (err) {
-				that.logger.fatal("无法将新请求添加到数据库。", err);
+				that.logger.fatal("Database is not available to accept new requests.", err);
 				that.acknowledge(callback, "fail", err);
 			}
 
@@ -234,7 +234,7 @@ MessageManager.prototype = {
 
 		}, function(err, record) {
 			if (err) {
-				this.logger.fatal("无法更新请求状态READY/RETRY->PROCESSING。", err);
+				this.logger.fatal("Cannot update request state: READY/RETRY->PROCESSING。", err);
 				return;
 			}
 
@@ -266,7 +266,7 @@ MessageManager.prototype = {
 			}, record, function(err) {
 				if (err) {
 					// unable to update subscriber state from READY/RETRY to PROCESSING 
-					this.logger.fatal("无法更新subscribers的请求状态READY/RETRY->PROCESSING", err);
+					this.logger.fatal("Cannot update subscribers state: READY/RETRY->PROCESSING", err);
 					// TODO: try to revert record state from PROCESSING back to READY/RETRY
 					return;
 				}
