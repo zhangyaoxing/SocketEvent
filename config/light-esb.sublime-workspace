@@ -1,0 +1,532 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"subs",
+				"subscriberStatus"
+			],
+			[
+				"subsc",
+				"subscribers"
+			],
+			[
+				"exist",
+				"existedSocket"
+			],
+			[
+				"subscr",
+				"subscriberId"
+			],
+			[
+				"catego",
+				"category_name"
+			],
+			[
+				"category",
+				"Category"
+			]
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "",
+	"command_palette":
+	{
+		"height": 72.0,
+		"selected_items":
+		[
+			[
+				"javasc",
+				"Set Syntax: JavaScript"
+			],
+			[
+				"format",
+				"Format: Javascript"
+			],
+			[
+				"c#",
+				"Set Syntax: C#"
+			],
+			[
+				"menu",
+				"View: Toggle Menu"
+			],
+			[
+				"todo",
+				"TodoReview: Project and Open Files"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"forma",
+				"Format: Javascript"
+			],
+			[
+				"tasks:new",
+				"Tasks: New"
+			],
+			[
+				"remove",
+				"Package Control: Remove Package"
+			],
+			[
+				"toggle",
+				"Toggle Comment"
+			],
+			[
+				":w",
+				":w - Save"
+			],
+			[
+				"syntax json",
+				"Set Syntax: JSON"
+			],
+			[
+				"format json",
+				"Pretty JSON: Reformat (Pretty Print) JSON"
+			],
+			[
+				"status",
+				"View: Toggle Status Bar"
+			],
+			[
+				"theme",
+				"Colorsublime: Install Theme"
+			],
+			[
+				"them",
+				"Colorsublime: Install Theme"
+			],
+			[
+				"remo",
+				"Package Control: Remove Package"
+			],
+			[
+				"men",
+				"View: Toggle Menu"
+			],
+			[
+				"form",
+				"Format: Javascript"
+			],
+			[
+				"javas",
+				"Set Syntax: JavaScript"
+			],
+			[
+				"beau",
+				"Javascript Beautify"
+			],
+			[
+				"comp",
+				"Snippet: Underscore.js compact"
+			],
+			[
+				"remov",
+				"Package Control: Remove Package"
+			],
+			[
+				"colo",
+				"Colorsublime: Install Theme"
+			],
+			[
+				"color",
+				"Colorsublime: Install Theme"
+			],
+			[
+				"jsbea",
+				"Javascript Beautify"
+			],
+			[
+				"instal",
+				"Package Control: Install Package"
+			],
+			[
+				"jade",
+				"Set Syntax: Jade"
+			],
+			[
+				"syntax jad",
+				"Set Syntax: Jade"
+			],
+			[
+				"html",
+				"Set Syntax: HTML"
+			],
+			[
+				"insta",
+				"Package Control: Install Package"
+			],
+			[
+				"xml",
+				"Set Syntax: XML"
+			],
+			[
+				"javascr",
+				"Set Syntax: JavaScript"
+			]
+		],
+		"width": 449.0
+	},
+	"console":
+	{
+		"height": 125.0,
+		"history":
+		[
+			"import urllib.request,os,hashlib; h = '7183a2d3e96f11eeadd761d777e62404e330c659d4bb41d3bdf022e94cab3cd0'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://sublime.wbond.net/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": false,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": true,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/home/yaoxing/workspace/LightESB/TODO",
+		"/home/yaoxing/workspace/LightESB/app.js",
+		"/home/yaoxing/workspace/LightESB/message_manager.js",
+		"/home/yaoxing/workspace/LightESB/response_sample.json",
+		"/home/yaoxing/workspace/LightESB/data_sample.json",
+		"/home/yaoxing/workspace/LightESB/exceptions.js",
+		"/home/yaoxing/workspace/LightESB/logger.js",
+		"/home/yaoxing/KuaiPan/scripts/price-down.js",
+		"/home/yaoxing/sku-modified.json",
+		"/home/yaoxing/sku.json",
+		"/home/yaoxing/workspace/LightESB/node_modules/mongodb/t.js",
+		"/home/yaoxing/.config/sublime-text-3/Packages/Nodejs/Nodejs.sublime-settings",
+		"/home/yaoxing/.config/sublime-text-3/Packages/User/Nodejs.sublime-settings",
+		"/home/yaoxing/workspace/LightESB/request_sample.json",
+		"/home/yaoxing/workspace/LightESB/config/default.json",
+		"/home/yaoxing/workspace/LightESB/node_modules/mongodb/lib/mongodb/collection/query.js",
+		"/home/yaoxing/.config/sublime-text-3/Packages/PlainTasks/messages/Tutorial.todo",
+		"/home/yaoxing/workspace/LightESB/todo.todo",
+		"/home/yaoxing/workspace/Acepace/app.js",
+		"/home/yaoxing/workspace/Acepace/entities/category.js",
+		"/home/yaoxing/.config/sublime-text-3/Packages/User/Preferences.sublime-settings",
+		"/home/yaoxing/workspace/LightESB/package.json",
+		"/home/yaoxing/workspace/LightESB/node_modules/config/README.md",
+		"/home/yaoxing/workspace/LightESB/config/default.yaml",
+		"/home/yaoxing/workspace/LightESB/config/runtime.json",
+		"/home/yaoxing/.config/sublime-text-3/Packages/User/Default (Linux).sublime-keymap",
+		"/home/yaoxing/.config/sublime-text-3/Packages/Default/Preferences.sublime-settings",
+		"/home/yaoxing/.config/sublime-text-3/Packages/User/JSON.sublime-settings",
+		"/home/yaoxing/.config/sublime-text-3/Packages/User/Distraction Free.sublime-settings",
+		"/home/yaoxing/.config/sublime-text-3/Packages/Default/Default (Linux).sublime-keymap",
+		"/home/yaoxing/workspace/NodeCMS/app.js",
+		"/home/yaoxing/test.html",
+		"/home/yaoxing/workspace/Acepace/views/edit/category.jade",
+		"/home/yaoxing/.config/sublime-text-2/Packages/Nodejs/Nodejs.sublime-settings",
+		"/home/yaoxing/.config/sublime-text-2/Packages/User/Nodejs.sublime-settings",
+		"/home/yaoxing/.local/share/gnome-shell/extensions/message-notifier@yaoxing.acepace.net/extension.js",
+		"/home/yaoxing/.local/share/gnome-shell/extensions/cpufreq@nodefourtytwo.net/extension.js",
+		"/home/yaoxing/workspace/Acepace/config/default.yaml",
+		"/home/yaoxing/workspace/Acepace/public/javascripts/jquery.validate.min.js",
+		"/tmp/.fr-mNoy2v/localization/messages_zh.js",
+		"/tmp/.fr-RCpuaU/localization/messages_ar.js",
+		"/home/yaoxing/workspace/Acepace/routes/index.js",
+		"/home/yaoxing/.config/sublime-text-2/Packages/User/Preferences.sublime-settings",
+		"/home/yaoxing/workspace/Acepace/views/edit/page.jade",
+		"/home/yaoxing/workspace/Acepace/views/index.jade",
+		"/home/yaoxing/workspace/Acepace/views/edit.jade",
+		"/home/yaoxing/workspace/Acepace/public/mercury/javascripts/mercury_loader.js",
+		"/home/yaoxing/workspace/Acepace/entities/DbBase.js",
+		"/home/yaoxing/workspace/Acepace/config/runtime.json",
+		"/home/yaoxing/workspace/Acepace/entities/Category.js",
+		"/home/yaoxing/workspace/Acepace/public/mercury/javascripts/mercury_dialogs.js",
+		"/home/yaoxing/workspace/Acepace/public/mercury/stylesheets/mercury.css",
+		"/home/yaoxing/workspace/Acepace/public/mercury/stylesheets/mercury.bundle.css",
+		"/home/yaoxing/workspace/Acepace/views/layout.jade",
+		"/home/yaoxing/Downloads/mercury_dialogs.coffee",
+		"/home/yaoxing/workspace/Acepace/routes/user.js",
+		"/home/yaoxing/workspace/Acepace/public/stylesheets/style.styl",
+		"/home/yaoxing/workspace/Timeline/app.js",
+		"/home/yaoxing/.local/share/gnome-shell/extensions/web_search_dialog@awamper.gmail.com/prefs.js",
+		"/home/yaoxing/.local/share/gnome-shell/extensions/web_search_dialog@awamper.gmail.com/extension.js",
+		"/home/yaoxing/.local/share/gnome-shell/extensions/message-notifier@yaoxing.acepace.net/stylesheet.css",
+		"/home/yaoxing/Downloads/RingGm/index.theme",
+		"/home/yaoxing/Downloads/RingGm/cursor.theme",
+		"/home/yaoxing/scripts/powersaving.sh",
+		"/home/yaoxing/Documents/pixel_new-дил.txt",
+		"/home/yaoxing/Downloads/Index.cshtml"
+	],
+	"find":
+	{
+		"height": 34.0
+	},
+	"find_in_files":
+	{
+		"height": 90.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"WARNING",
+			"callback",
+			"\n			",
+			"timerHandler",
+			"msg",
+			"..",
+			"...",
+			"subscribers",
+			"targets",
+			"item",
+			"eventQueue",
+			"newCost",
+			"down",
+			"UnitCost",
+			"sku",
+			"UnitCost",
+			"sku",
+			"validate",
+			"getAck",
+			"db",
+			"ReplicaSetManager",
+			"async",
+			"logger",
+			"eventSubscribers",
+			"Messenger",
+			"ack",
+			"					",
+			"eventSubscribers",
+			"subscribers",
+			"eventQueue",
+			"subscribers",
+			"subscriptions",
+			"complete",
+			"swap",
+			"e",
+			":",
+			"gstreamer0",
+			"SKU",
+			"_id",
+			",",
+			"UnitCost",
+			"SKU",
+			"Math.round",
+			"Price",
+			"Value",
+			"_id",
+			"239717",
+			"en_GB",
+			"arguments",
+			"Main",
+			"SystemStatusButton",
+			"category[desc]",
+			"desc",
+			"category[desc]",
+			"category_name",
+			"category_desc",
+			"category_name",
+			"categoryNameError",
+			"function",
+			"\n}",
+			"all",
+			"assets",
+			"dist",
+			"keyboard",
+			"3",
+			"helloworld-label",
+			"...",
+			"2013",
+			"img",
+			"data-src",
+			"Content",
+			"alt",
+			"data-src",
+			"clear",
+			"navbar-nav > .active > a",
+			"li.active > a:hover",
+			"li.active",
+			"active",
+			"navbar-nav > li > a",
+			".navbar-nav",
+			"navbar-nav>li>a",
+			"navbar-nav>",
+			"navbar-nav>li>a"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": true,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 34.0
+	},
+	"input":
+	{
+		"height": 34.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": false,
+	"output.exec":
+	{
+		"height": 100.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"output.git":
+	{
+		"height": 355.0
+	},
+	"project": "light-esb.sublime-project",
+	"replace":
+	{
+		"height": 0.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+			[
+				"mess",
+				"message_manager.js"
+			],
+			[
+				"mes",
+				"message_manager.js"
+			],
+			[
+				"exc",
+				"exceptions.js"
+			],
+			[
+				"ap",
+				"app.js"
+			],
+			[
+				"a",
+				"app.js"
+			],
+			[
+				"re",
+				"response_sample.json"
+			],
+			[
+				"ex",
+				"exceptions.js"
+			],
+			[
+				"logg",
+				"logger.js"
+			],
+			[
+				"logger",
+				"logger.js"
+			],
+			[
+				"app",
+				"app.js"
+			],
+			[
+				"to",
+				"TODO"
+			],
+			[
+				"data",
+				"~/workspace/LightESB/data_sample.json"
+			],
+			[
+				"{",
+				"{"
+			],
+			[
+				"app.js",
+				"~/workspace/Acepace/app.js"
+			],
+			[
+				"",
+				"~/.config/sublime-text-3/Packages/User/Preferences.sublime-settings"
+			],
+			[
+				"cate",
+				"~/workspace/Acepace/entities/category.js"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 208.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
