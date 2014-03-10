@@ -36,6 +36,12 @@ function MessageManager() {
 }
 
 MessageManager.prototype = {
+	_getCollection: function() {
+		return this.db.collection("queue");
+	},
+	_getDb: function(callback) {
+		MongoClient.connect(DB_CONFIG.url, callback);
+	},
 	// @return {status: <[true, false]>, error: (optional)}
 	validate: function(data) {
 		var result = {
@@ -58,7 +64,7 @@ MessageManager.prototype = {
 	listen: function(port, host) {
 		var that = this;
 
-		MongoClient.connect(DB_CONFIG.url, function(err, db) {
+		this._getDb(function(err, db) {
 			if (err) {
 				var error = getError("DatabaseUnavailable");
 				this.logger.fatal("Database not available.", err);
@@ -90,8 +96,7 @@ MessageManager.prototype = {
 	// data = {
 	// 	"requestId": "",	// mandatory. unique ID of each request.
 	// 	"senderId": "",	// mandatory. unique name of sender.
-	// 	"event": "enqueue", // mandatory. options: enqueue/ack/command.
-	// 	"params": {},	// optional. only available when action=command
+	// 	"event": "" // mandatory. options: enqueue/ack/command.
 	// }
 	subscribe: function(socket, data, callback) {
 		var result = this.validate(data);
@@ -125,7 +130,7 @@ MessageManager.prototype = {
 			});
 		}
 		this.acknowledge(callback, {
-			reqeustId: data.requestId,
+			requestId: data.requestId,
 			status: REQUEST_RESULT.SUCCESS
 		});
 	},
@@ -178,7 +183,7 @@ MessageManager.prototype = {
 				lastOperateTime: null
 			}
 		});
-		this.db.collection("queue").insert({
+		this._getCollection.insert({
 			"requestId": data.requestId,
 			"senderId": data.senderId,
 			"retryLimit": data.retryLimit,
@@ -218,7 +223,7 @@ MessageManager.prototype = {
 
 		// find the earliest event with status READY or RETRY.
 		// only one record is proceeded at one time.
-		this.db.collection("queue").findAndModify({
+		this._getCollection.findAndModify({
 			"$or": [{
 				state: STATE.READY
 			}, {
@@ -261,7 +266,7 @@ MessageManager.prototype = {
 			});
 
 			// batch update all the subscriber status in current record to PROCESSING
-			this.db.collection("queue").update({
+			this._getCollection.update({
 				"_id": record["_id"]
 			}, record, function(err) {
 				if (err) {
@@ -334,7 +339,7 @@ MessageManager.prototype = {
 						record.state = STATE.RETRY;
 					}
 
-					this.db.collection("queue").update({
+					this._getCollection.update({
 						"_id": record["_id"]
 					}, record, function(err) {
 						if (err) {
@@ -348,3 +353,5 @@ MessageManager.prototype = {
 		});
 	}
 };
+
+exports.MessageManager = MessageManager;
