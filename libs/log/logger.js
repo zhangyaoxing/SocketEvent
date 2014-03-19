@@ -1,4 +1,5 @@
 var log4js = require('log4js');
+var util = require('util');
 log4js.configure({
 	appenders: [{
 		type: 'console'
