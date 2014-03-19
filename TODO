@@ -1,0 +1,7 @@
+Project:
+  message_manager:
+   ☐ 等待足够的订阅者到达再开始服务.
+   ☐ 加入TargetName更好地识别客户端
+   ☐ 处理中断的socket
+  其他:
+   ☐ 
