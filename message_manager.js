@@ -72,7 +72,8 @@ MessageManager.prototype = {
 			}
 
 			that.db = db;
-			var server = http.createServer(port, host ? host : "0.0.0.0");
+			var server = require('http').createServer();
+			server.listen(port, host ? host : "0.0.0.0");
 			this.io = require('socket.io').listen(server);
 			this.io.sockets.on('connection', function(socket) {
 				// 订阅事件
@@ -146,8 +147,9 @@ MessageManager.prototype = {
 	// data = {
 	// 	"requestId": "",	// mandatory. unique ID of each request.
 	// 	"senderId": "",	// mandatory. unique name of sender.
-	// 	"event": "enqueue", // mandatory. options: enqueue/ack/command.
-	//  "retryLimit": 1 	// optional. defaults to 0. -1 = always.
+	// 	"event": "enqueue", // mandatory.  event to trigger.
+	//  "retryLimit": 1, 	// optional. defaults to 0. -1 = always.
+	// 	"timeout": 60,	// optional. timeout in seconds. defaults to 60
 	// 	"args": {},	// optional. only available when action=command
 	// }
 	enqueue: function(data, callback) {
@@ -187,7 +189,7 @@ MessageManager.prototype = {
 			"requestId": data.requestId,
 			"senderId": data.senderId,
 			"retryLimit": data.retryLimit,
-			"timeout": data.timeout,
+			"timeout": (data.timeout ? data.timeout : 60) * 1000,
 			"event": data.event,
 			"args": data.args,
 			"createAt": new Date(),
