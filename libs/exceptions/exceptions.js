@@ -1,4 +1,4 @@
-var getLogger = require('./logger').getLogger;
+var getLogger = require('./../log/logger').getLogger;
 var logger = getLogger("MainLoop");
 
 var errors = {
