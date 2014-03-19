@@ -1,4 +1,4 @@
-var MessageManager = require("../message_manager").MessageManager;
+var MessageManager = require("../libs/message/message_manager").MessageManager;
 var testCase = require('nodeunit').testCase;
 
 module.exports = testCase({

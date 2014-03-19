@@ -1,8 +1,8 @@
-var DB_CONFIG = require('config').connections;
+var DB_CONFIG = require('../../config/default').connections;
 var MongoClient = require('mongodb').MongoClient;
 var _ = require('underscore');
-var getLogger = require('./logger').getLogger;
-var getError = require('./exceptions').getError;
+var getLogger = require('../log/logger').getLogger;
+var getError = require('../exception/exceptions').getError;
 var async = require('async');
 
 var STATE = {
