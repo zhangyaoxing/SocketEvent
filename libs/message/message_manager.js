@@ -4,6 +4,7 @@ var _ = require('underscore');
 var getLogger = require('../log/logger').getLogger;
 var getError = require('../exception/exceptions').getError;
 var async = require('async');
+var util = require("util");
 
 var STATE = {
 	READY: "READY",
@@ -90,7 +91,7 @@ MessageManager.prototype = {
 			// 每分钟尝试分发事件
 			setInterval(function() {
 				that.dispatch();
-			}, 600000);
+			}, 60000);
 		});
 	},
 	// request data sample
@@ -137,11 +138,18 @@ MessageManager.prototype = {
 	},
 	unsubscribe: function(event, subscriberId) {
 		var subscribers = this.eventSubscribers[event];
-		if (subscribers[subscriberId] && subscribers[subscriberId].socket.connected) {
-			subscribers[subscriberId].socket.disconnect();
+		var subscriber = null;
+		for (var i = 0; i < subscribers.length; i++) {
+			var subscriber = subscribers[i];
+			if (subscriber.subscriberId == subscriberId) {
+				subscribers.splice(i, 1);
+				this.logger.info(util.format("client [%s] unsubscribed from event [%s]", subscriberId, event));
+				if (subscriber && subscriber.socket.connected) {
+					subscriber.socket.disconnect();
+				}
+				break;
+			}
 		}
-		delete subscribers[subscriberId];
-		this.logger.info(util.format("Unsubscribed [%s]", subscriberId));
 	},
 	// request sample
 	// data = {
