@@ -10,17 +10,12 @@ var dbBase = require("base").dbBase;
 var STATE = require("./base").STATE;
 var REQUEST_RESULT = require("./base").REQUEST_RESULT;
 var Subscriber = require("./subscriber").Subscriber;
+var SUBSCRIBER_STATE = require(".subscriber").SUBSCRIBER_STATE;
 
 function MessageManager() {
 	// sample data
 	// eventSubscribers = {
-	// 	"event1": [{
-	// 		subscriberId: "id1",
-	// 		socket: socket1
-	// 	}, {
-	// 		subscriberId: "id2",
-	// 		socket: socket2
-	// 	}, ...],
+	// 	"event1": [Subscriber1, Subscriber2 ...],
 	// 	"event2": []
 	// 		...
 	// };
@@ -29,13 +24,20 @@ function MessageManager() {
 }
 
 MessageManager.prototype = {
-	// @return {status: <[true, false]>, error: (optional)}
+	/**
+	 * Validate request data.
+	 * @param  {Object} data [description]
+	 * @return {Object}      
+	 * {
+	 * 	error: "if any", 
+	 * 	status: REQUEST_RESULT
+	 * }
+	 */
 	_validate: function(data) {
 		var result = {
 			requestId: data.requestId,
 			status: REQUEST_RESULT.SUCCESS
 		};
-		// 数据合法性检查
 		if (!data.requestId) {
 			result.error = getError("ArgumentError", "requestId");
 			result.status = REQUEST_RESULT.FAIL;
@@ -53,6 +55,12 @@ MessageManager.prototype = {
 
 		return result;
 	},
+	/**
+	 * Start Socket IO listening.
+	 * @param  {int} port socket port
+	 * @param  {string} host host name or IP address.
+	 * @return {void}      void
+	 */
 	listen: function(port, host) {
 		this._getDb(function(err, db) {
 			if (err) {
@@ -65,27 +73,33 @@ MessageManager.prototype = {
 			server.listen(port, host ? host : "0.0.0.0");
 			this.io = require('socket.io').listen(server);
 			this.io.sockets.on('connection', function(socket) {
-				// 订阅事件
+				// client subscribes an event
 				socket.on("subscribe", function(data, callback) {
 					this.subscribe(socket, data, callback);
 				}.bind(this));
 
-				// 增加事件到队列
+				// client enqueues an event
 				socket.on("enqueue", function(data, callback) {
 					this.enqueue(data, callback);
 				}.bind(this));
 			}.bind(this));
 
-			// 每分钟尝试分发事件
+			// try to dispatch event every minutes
 			setInterval(this.schedule.bind(this), 60000);
 		}.bind(this));
 	},
-	// request data sample
-	// data = {
-	// 	"requestId": "",	// mandatory. unique ID of each request.
-	// 	"senderId": "",	// mandatory. unique name of sender.
-	// 	"event": "" // mandatory. options: enqueue/ack/command.
-	// }
+	/**
+	 * request data sample
+	 * data = {
+	 * "requestId": "",	// mandatory. unique ID of each request.
+	 * "senderId": "",	// mandatory. unique name of sender.
+	 * "event": "" // mandatory. options: enqueue/ack/command.
+	 * }
+	 * @param  {socket}   socket   SocketIO socket.
+	 * @param  {Object}   data     Data from socket client
+	 * @param  {Function} callback 
+	 * @return {void}            void
+	 */
 	subscribe: function(socket, data, callback) {
 		var result = this._validate(data);
 		if (result.status == REQUEST_RESULT.FAIL) {
@@ -99,40 +113,42 @@ MessageManager.prototype = {
 
 		var subscribers = this.eventSubscribers[data.event];
 		// check if this client has subscribed before
-		var existed = _.find(subscribers, function(subscriber) {
-			return subscriber.senderId == data.senderId;
+		var existed = _.find(subscribers, function(s) {
+			return s.id == data.senderId;
 		});
 
 		if (existed) {
 			// client already subscribed. close previous connection, use current one instead.
-			var existedSocket = existed.socket;
-			existed.socket = socket;
-			if (existedSocket.connected) {
-				existedSocket.disconnect();
-				this.logger.warn("Client already connected.", getError("AlreadyConnected", senderId));
-			}
+			this.unsubscribe(data.event, data.senderId);
+			this.logger.warn("Client already connected.", getError("AlreadyConnected", existed.id));
 		} else {
-			subscribers.push({
-				subscriberId: data.senderId,
-				socket: socket
+			var newSubscriber = new Subscriber(this, {
+				id: data.senderId,
+				socket: socket,
+				event: data.event
 			});
+			subscribers.push(newSubscriber);
 		}
 		this.acknowledge(callback, {
 			requestId: data.requestId,
 			status: REQUEST_RESULT.SUCCESS
 		});
 	},
-	unsubscribe: function(event, subscriberId) {
+	/**
+	 * Unsubscribe by event and subscriber ID.
+	 * @param  {string} event event name
+	 * @param  {string} sId   subscriber ID
+	 * @return {void}       void
+	 */
+	unsubscribe: function(event, sId) {
 		var subscribers = this.eventSubscribers[event];
 		var subscriber = null;
 		for (var i = 0; i < subscribers.length; i++) {
 			var subscriber = subscribers[i];
-			if (subscriber.subscriberId == subscriberId) {
+			if (subscriber.id == sId) {
 				subscribers.splice(i, 1);
-				this.logger.info(util.format("client [%s] unsubscribed from event [%s]", subscriberId, event));
-				if (subscriber && subscriber.socket.connected) {
-					subscriber.socket.disconnect();
-				}
+				this.logger.info(util.format("client [%s] unsubscribed from event [%s]", sId, event));
+				subscriber.dispose();
 				break;
 			}
 		}
@@ -147,7 +163,7 @@ MessageManager.prototype = {
 	// 	"args": {},	// optional. only available when action=command
 	// }
 	enqueue: function(data, callback) {
-		// data sample
+		// data storage sample
 		// {
 		// 	"_id": "",	// mandatory. 
 		// 	"requestId": "",	// mandatory. unique ID of each request.
@@ -169,11 +185,10 @@ MessageManager.prototype = {
 			return;
 		}
 
-		var this = this;
 		// find out all the subscribers and prepare basic data for them.
 		var subscribers = _.map(this.eventSubscribers[data.event], function(elm) {
 			return {
-				subscriberId: elm.senderId,
+				subscriberId: elm.id,
 				remainingRetryTimes: data.retryLimit,
 				state: STATE.READY,
 				lastOperateTime: null
@@ -192,13 +207,27 @@ MessageManager.prototype = {
 		}, function(err, doc) {
 			if (err) {
 				this.logger.fatal("Database is not available to accept new requests.", err);
-				this.acknowledge(callback, "fail", err);
+				this.acknowledge(callback, {
+					requestId: data.requestId,
+					status: REQUEST_RESULT.FAIL,
+					error: err
+				});
+				return;
 			}
 
-			this.acknowledge(callback, data);
+			this.acknowledge(callback, {
+				requestId: data.requestId,
+				status: REQUEST_RESULT.SUCCESS
+			});
 			this.schedule();
 		}.bind(this));
 	},
+	/**
+	 * Acknowlege to client
+	 * @param  {Function} callback this function will be invoked with parameter describing request status.
+	 * @param  {Object}   data     Data describing request status.
+	 * @return {void}            void
+	 */
 	acknowledge: function(callback, data) {
 		var result = {
 			requestId: data.requestId,
@@ -215,13 +244,12 @@ MessageManager.prototype = {
 		callback(result);
 	},
 	schedule: function() {
-		// find the earliest event with status READY or RETRY.
-		// only one record is proceeded at one time.
-		this._preDispatch();
-		targetSockets = _.indexBy(this.eventSubscribers[event], 'subscriberId');
-		Event.createInstance(targetSockets, function(eventObj) {
-			eventObj.dispatch();
-		});
+		Event.createInstance(this.eventSubscribers, function(eventObj) {
+			if (eventObj) {
+				setTimeout(this.schedule.bind(this), 10);
+				eventObj.dispatch();
+			}
+		})
 	}
 };
 

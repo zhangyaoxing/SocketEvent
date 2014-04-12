@@ -30,11 +30,11 @@ function Subscriber(manager, config) {
 }
 
 Subscriber.prototype = {
-	notify: function(args, timeout, asyncCallback) {
+	notify: function(args, timeout, callback) {
 		// Handle unexpected errors. Including timeout, error.
 		var errorHandling = function() {
 			this.manager.unsubscribe(this);
-			asyncCallback(null, {
+			callback({
 				subscriberId: this.id,
 				status: REQUEST_RESULT.FAIL
 			});
@@ -46,7 +46,7 @@ Subscriber.prototype = {
 				// cancel the failure notification because it's succeeded.
 				clearTimeout(timeoutHandler);
 				// notify parallel result
-				asyncCallback(null, {
+				callback({
 					subscriberId: this.id,
 					status: data.status
 				});

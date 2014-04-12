@@ -1,5 +1,6 @@
 var getLogger = require('./../log/logger').getLogger;
 var logger = getLogger("MainLoop");
+var util = require("util");
 
 var errors = {
 	"AlreadyConnected": {
