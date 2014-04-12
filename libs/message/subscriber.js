@@ -8,6 +8,11 @@ var util = require("util");
 var STATE = require("./base").STATE;
 var REQUEST_RESULT = require("./base").REQUEST_RESULT;
 
+var SUBSCRIBER_STATE = {
+	ALIVE: "ALIVE",
+	DEAD: "DEAD"
+}
+
 function Subscriber(manager, config) {
 	// sample data
 	// config = {
@@ -16,6 +21,7 @@ function Subscriber(manager, config) {
 	// 	event: "",
 	// 	timeout: 60
 	// }
+	this.state = SUBSCRIBER_STATE.ALIVE;
 	this.id = config.id;
 	this.socket = config.socket;
 	this.event = config.event;
@@ -50,6 +56,14 @@ Subscriber.prototype = {
 			this.logger.error("Unable to emit event to subscriber.", err);
 		}
 	},
+	dispose: function() {
+		if (this.socket.connected) {
+			this.socket.disconnect();
+		}
+		this.state = SUBSCRIBER_STATE.DEAD;
+		this.logger.info("Subscriber [" + this.id + "] disposed.")
+	}
 }
 
 exports.Subscriber = Subscriber;
+exports.SUBSCRIBER_STATE = SUBSCRIBER_STATE;
