@@ -6,11 +6,11 @@ var getLogger = require('../log/logger').getLogger;
 var getError = require('../exception/exceptions').getError;
 var async = require('async');
 var util = require("util");
-var dbBase = require("base").dbBase;
+var dbBase = require("./base").dbBase;
 var STATE = require("./base").STATE;
 var REQUEST_RESULT = require("./base").REQUEST_RESULT;
 var Subscriber = require("./subscriber").Subscriber;
-var SUBSCRIBER_STATE = require(".subscriber").SUBSCRIBER_STATE;
+var SUBSCRIBER_STATE = require("./subscriber").SUBSCRIBER_STATE;
 
 function MessageManager() {
 	// sample data

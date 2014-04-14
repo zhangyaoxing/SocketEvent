@@ -1,3 +1,13 @@
+var DB_CONFIG = require('../../config/default').connections;
+var MongoClient = require('mongodb').MongoClient;
+var _ = require('underscore');
+var getLogger = require('../log/logger').getLogger;
+var getError = require('../exception/exceptions').getError;
+var util = require("util");
+var dbBase = require("./base").dbBase;
+var STATE = require("./base").STATE;
+var REQUEST_RESULT = require("./base").REQUEST_RESULT;
+
 // find the earliest event with status READY or RETRY.
 // only one record is proceeded at one time.
 function Event(record, subscribers) {
