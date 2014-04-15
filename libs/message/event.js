@@ -7,6 +7,7 @@ var util = require("util");
 var dbBase = require("./base").dbBase;
 var STATE = require("./base").STATE;
 var REQUEST_RESULT = require("./base").REQUEST_RESULT;
+var COLLECTION_NAME = require('../../config/default').queueCollectionName;
 
 // find the earliest event with status READY or RETRY.
 // only one record is proceeded at one time.

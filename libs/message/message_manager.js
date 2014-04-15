@@ -11,6 +11,7 @@ var STATE = require("./base").STATE;
 var REQUEST_RESULT = require("./base").REQUEST_RESULT;
 var Subscriber = require("./subscriber").Subscriber;
 var SUBSCRIBER_STATE = require("./subscriber").SUBSCRIBER_STATE;
+var Event = require("./event").Event;
 
 function MessageManager() {
 	// sample data
@@ -73,6 +74,7 @@ MessageManager.prototype = {
 			server.listen(port, host ? host : "0.0.0.0");
 			this.io = require('socket.io').listen(server);
 			this.io.sockets.on('connection', function(socket) {
+				this.logger.info(util.format("Client connected: [%s].", socket.id));
 				// client subscribes an event
 				socket.on("subscribe", function(data, callback) {
 					this.subscribe(socket, data, callback);
@@ -133,6 +135,7 @@ MessageManager.prototype = {
 			requestId: data.requestId,
 			status: REQUEST_RESULT.SUCCESS
 		});
+		this.logger.info(util.format("Client [%s] subscribed event [%s].", data.senderId, data.event));
 	},
 	/**
 	 * Unsubscribe by event and subscriber ID.
