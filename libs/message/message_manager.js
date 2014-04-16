@@ -74,7 +74,7 @@ MessageManager.prototype = {
 			server.listen(port, host ? host : "0.0.0.0");
 			this.io = require('socket.io').listen(server);
 			this.io.sockets.on('connection', function(socket) {
-				this.logger.info(util.format("Client connected: [%s].", socket.id));
+				this.logger.info(util.format("[Connect]: Client connected: \"%s\".", socket.id));
 				// client subscribes an event
 				socket.on("subscribe", function(data, callback) {
 					this.subscribe(socket, data, callback);
@@ -135,7 +135,7 @@ MessageManager.prototype = {
 			requestId: data.requestId,
 			status: REQUEST_RESULT.SUCCESS
 		});
-		this.logger.info(util.format("Client [%s] subscribed event [%s].", data.senderId, data.event));
+		this.logger.info(util.format("[Subscribe]: Client \"%s\" subscribed event \"%s\".", data.senderId, data.event));
 	},
 	/**
 	 * Unsubscribe by event and subscriber ID.
@@ -150,7 +150,7 @@ MessageManager.prototype = {
 			var subscriber = subscribers[i];
 			if (subscriber.id == sId) {
 				subscribers.splice(i, 1);
-				this.logger.info(util.format("client [%s] unsubscribed from event [%s]", sId, event));
+				this.logger.info(util.format("[Unsubscribe]: Client \"%s\" unsubscribed from event \"%s\"", sId, event));
 				subscriber.dispose();
 				break;
 			}
@@ -218,6 +218,7 @@ MessageManager.prototype = {
 				return;
 			}
 
+			this.logger.info(util.format("[Event]: event \"%s\" submitted by sender \"%s\"", data.event, data.senderId));
 			this.acknowledge(callback, {
 				requestId: data.requestId,
 				status: REQUEST_RESULT.SUCCESS
@@ -247,12 +248,12 @@ MessageManager.prototype = {
 		callback(result);
 	},
 	schedule: function() {
-		Event.createInstance(this.eventSubscribers, function(eventObj) {
+		Event.createInstance(this.db, this.eventSubscribers, function(eventObj) {
 			if (eventObj) {
 				setTimeout(this.schedule.bind(this), 10);
 				eventObj.dispatch();
 			}
-		})
+		}.bind(this))
 	}
 };
 

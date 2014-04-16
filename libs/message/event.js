@@ -11,7 +11,8 @@ var COLLECTION_NAME = require('../../config/default').queueCollectionName;
 
 // find the earliest event with status READY or RETRY.
 // only one record is proceeded at one time.
-function Event(record, subscribers) {
+function Event(db, record, subscribers) {
+	this.db = db;
 	this.originalRecord = record;
 	this.logger = getLogger();
 
@@ -124,35 +125,33 @@ Event.prototype = {
 	}
 };
 
-Event.createInstance = function(eventSubscribers, callback) {
-	MongoClient.connect(DB_CONFIG.url, function(err, db) {
-		db.collection(COLLECTION_NAME).findAndModify({
-			"$or": [{
-				state: STATE.READY
-			}, {
-				state: STATE.RETRY
-			}]
+Event.createInstance = function(db, eventSubscribers, callback) {
+	db.collection(COLLECTION_NAME).findAndModify({
+		"$or": [{
+			state: STATE.READY
 		}, {
-			createAt: 1
-		}, {
-			"$set": {
-				state: STATE.PROCESSING
-			}
-		}, {
+			state: STATE.RETRY
+		}]
+	}, {
+		createAt: 1
+	}, {
+		"$set": {
+			state: STATE.PROCESSING
+		}
+	}, {
 
-		}, function(err, record) {
-			if (err) {
-				this.logger.fatal("Cannot update request state: READY/RETRY->PROCESSING.", err);
-				return;
-			}
+	}, function(err, record) {
+		if (err) {
+			this.logger.fatal("Cannot update request state: READY/RETRY->PROCESSING.", err);
+			return;
+		}
 
-			if (record) {
-				var subscribers = eventSubscribers[record.event];
-				callback(new Event(record, subscribers));
-			} else {
-				callback(null);
-			}
-		});
+		if (record) {
+			var subscribers = eventSubscribers[record.event];
+			callback(new Event(db, record, subscribers));
+		} else {
+			callback(null);
+		}
 	});
 };
 
