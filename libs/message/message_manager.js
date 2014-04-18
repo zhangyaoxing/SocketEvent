@@ -161,7 +161,7 @@ MessageManager.prototype = {
 	// 	"requestId": "",	// mandatory. unique ID of each request.
 	// 	"senderId": "",	// mandatory. unique name of sender.
 	// 	"event": "enqueue", // mandatory.  event to trigger.
-	//  "retryLimit": 1, 	// optional. defaults to 0. -1 = always.
+	//  "tryTimes": 1, 	// optional. defaults to 1. -1 = always.
 	// 	"timeout": 60,	// optional. timeout in seconds. defaults to 60
 	// 	"args": {},	// optional. only available when action=command
 	// }
@@ -172,12 +172,12 @@ MessageManager.prototype = {
 		// 	"requestId": "",	// mandatory. unique ID of each request.
 		// 	"senderId": "",	// mandatory. unique name of sender.
 		// 	"event": "",	// mandatory. event name.
-		// 	"retryLimit": 1,	// mandatory. how many times should we retry if fails. -1 = always.
+		// 	"tryTimes": 1,	// mandatory. how many times should we try if fails. -1 = always.
 		// 	"timeout": 60,	// mandatory. timeout in seconds.
 		// 	"args": {},	// optional.
 		// 	"subscribers": [{
 		// 		subscriberId: "id1",
-		// 		remainingRetryTimes: 4,
+		// 		remainingTryTimes: 4,
 		// 		state: STATE.READY,
 		// 		lastOperateTime: new Date()
 		// 	}] // target names
@@ -192,7 +192,7 @@ MessageManager.prototype = {
 		var subscribers = _.map(this.eventSubscribers[data.event], function(elm) {
 			return {
 				subscriberId: elm.id,
-				remainingRetryTimes: data.retryLimit,
+				remainingTryTimes: data.tryTimes,
 				state: STATE.READY,
 				lastOperateTime: null
 			}
@@ -200,7 +200,7 @@ MessageManager.prototype = {
 		this._getCollection().insert({
 			"requestId": data.requestId,
 			"senderId": data.senderId,
-			"retryLimit": data.retryLimit,
+			"tryTimes": data.tryTimes,
 			"timeout": (data.timeout ? data.timeout : 60) * 1000,
 			"event": data.event,
 			"args": data.args,
