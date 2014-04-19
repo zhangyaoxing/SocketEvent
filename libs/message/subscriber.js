@@ -55,8 +55,7 @@ Subscriber.prototype = {
 					event: this.event,
 					args: args
 				};
-			this.socket.emit(this.event, requestDto,
-				function(data) {
+			this.socket.emit(this.event, requestDto, function(data) {
 					// cancel the failure notification because it's succeeded.
 					clearTimeout(timeoutHandler);
 					// notify parallel result

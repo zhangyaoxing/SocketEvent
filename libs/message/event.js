@@ -43,6 +43,7 @@ Event.prototype = {
 			case REQUEST_RESULT.SUCCESS:
 				subscriberToBeUpdated.state = STATE.DONE;
 				break;
+			default:
 			case REQUEST_RESULT.FAIL:
 				subscriberToBeUpdated.state = subscriberToBeUpdated.remainingTryTimes == 0 ? STATE.FAIL : STATE.RETRY;
 				break;
@@ -145,7 +146,7 @@ Event.createInstance = function(db, eventSubscribers, callback) {
 			state: STATE.PROCESSING
 		}
 	}, {
-
+		new: true
 	}, function(err, record) {
 		if (err) {
 			this.logger.fatal("Cannot update request state: READY/RETRY->PROCESSING.", err);

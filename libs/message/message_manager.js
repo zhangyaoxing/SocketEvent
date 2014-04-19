@@ -28,9 +28,9 @@ MessageManager.prototype = {
 	/**
 	 * Validate request data.
 	 * @param  {Object} data [description]
-	 * @return {Object}      
+	 * @return {Object}
 	 * {
-	 * 	error: "if any", 
+	 * 	error: "if any",
 	 * 	status: REQUEST_RESULT
 	 * }
 	 */
@@ -99,7 +99,7 @@ MessageManager.prototype = {
 	 * }
 	 * @param  {socket}   socket   SocketIO socket.
 	 * @param  {Object}   data     Data from socket client
-	 * @param  {Function} callback 
+	 * @param  {Function} callback
 	 * @return {void}            void
 	 */
 	subscribe: function(socket, data, callback) {
@@ -123,14 +123,13 @@ MessageManager.prototype = {
 			// client already subscribed. close previous connection, use current one instead.
 			this.unsubscribe(data.event, data.senderId);
 			this.logger.warn("Client already connected.", getError("AlreadyConnected", existed.id));
-		} else {
-			var newSubscriber = new Subscriber(this, {
-				id: data.senderId,
-				socket: socket,
-				event: data.event
-			});
-			subscribers.push(newSubscriber);
 		}
+		var newSubscriber = new Subscriber(this, {
+			id: data.senderId,
+			socket: socket,
+			event: data.event
+		});
+		subscribers.push(newSubscriber);
 		this.acknowledge(callback, {
 			requestId: data.requestId,
 			status: REQUEST_RESULT.SUCCESS
