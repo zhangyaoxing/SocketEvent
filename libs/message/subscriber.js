@@ -41,7 +41,7 @@ Subscriber.prototype = {
 	notify: function(args, timeout, callback) {
 		// Handle unexpected errors. Including timeout, error.
 		var errorHandling = function() {
-			this.manager.unsubscribe(this.event, this.id);
+			// this.manager.unsubscribe(this.event, this.id);
 			callback({
 				subscriberId: this.id,
 				status: REQUEST_RESULT.FAIL
