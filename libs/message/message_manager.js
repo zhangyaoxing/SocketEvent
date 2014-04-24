@@ -78,6 +78,12 @@ MessageManager.prototype = {
 				// client subscribes an event
 				socket.on("subscribe", function(data, callback) {
 					this.subscribe(socket, data, callback);
+
+					// auto-unsubscribe when disconnected.
+					socket.on("disconnect", function() {
+						this.logger.info(util.format("Client [%s] disconnected. Unsubscribe event [%]", data.senderId, data.event));
+						this.unsubscribe(data.event, data.senderId);
+					}.bind(this));
 				}.bind(this));
 
 				// client enqueues an event
