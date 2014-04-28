@@ -1,4 +1,5 @@
 var DB_CONFIG = require('../../config/default').connections;
+var WAITING_CONFIG = require('../../config/default').waitings;
 var COLLECTION_NAME = require('../../config/default').queueCollectionName;
 var MongoClient = require('mongodb').MongoClient;
 var _ = require('underscore');
@@ -22,6 +23,11 @@ function MessageManager() {
 	// };
 	this.logger = getLogger("MainLoop");
 	this.eventSubscribers = {};
+	this.waitingFor = {};
+	_.each(WAITING_CONFIG, function(id) {
+		this.waitingFor[id] = false;
+	}.bind(this));
+	this.allSubscribersReady = false;
 }
 
 MessageManager.prototype = {
@@ -81,7 +87,7 @@ MessageManager.prototype = {
 
 					// auto-unsubscribe when disconnected.
 					socket.on("disconnect", function() {
-						this.logger.info(util.format("Client [%s] disconnected. Unsubscribe event [%]", data.senderId, data.event));
+						this.logger.info(util.format("Client [%s] disconnected. Unsubscribe event [%s]", data.senderId, data.event));
 						this.unsubscribe(data.event, data.senderId);
 					}.bind(this));
 				}.bind(this));
@@ -136,6 +142,16 @@ MessageManager.prototype = {
 			event: data.event
 		});
 		subscribers.push(newSubscriber);
+		// check if all the subscribers we are waiting are online.
+		this.waitingFor[newSubscriber.id] == true;
+		var allReady = true;
+		_.each(this.waitingFor, function(value, key) {
+			if (!value) {
+				allReady = false;
+			}
+		});
+		this.allSubscribersReady = allReady;
+
 		this.acknowledge(callback, {
 			requestId: data.requestId,
 			status: REQUEST_RESULT.SUCCESS
@@ -159,6 +175,10 @@ MessageManager.prototype = {
 				subscriber.dispose();
 				break;
 			}
+		}
+		if (this.waitingFor[sId]) {
+			this.waitingFor[sId] = false;
+			this.allSubscribersReady = false;
 		}
 	},
 	// request sample
@@ -253,6 +273,11 @@ MessageManager.prototype = {
 		callback(result);
 	},
 	schedule: function() {
+		if (!this.allSubscribersReady) {
+			// Still waiting for some subscriber to join. Do nothing.
+			this.logger.info("Some subscriber(s) are not ready:\n" + JSON.stringify(this.waitingFor));
+			return;
+		}
 		Event.createInstance(this.db, this.eventSubscribers, function(eventObj) {
 			if (eventObj) {
 				setTimeout(this.schedule.bind(this), 10);
