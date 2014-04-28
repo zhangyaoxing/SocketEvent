@@ -143,7 +143,7 @@ MessageManager.prototype = {
 		});
 		subscribers.push(newSubscriber);
 		// check if all the subscribers we are waiting are online.
-		this.waitingFor[newSubscriber.id] == true;
+		this.waitingFor[newSubscriber.id] = true;
 		var allReady = true;
 		_.each(this.waitingFor, function(value, key) {
 			if (!value) {
