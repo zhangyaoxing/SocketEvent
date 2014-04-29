@@ -143,13 +143,16 @@ MessageManager.prototype = {
 		});
 		subscribers.push(newSubscriber);
 		// check if all the subscribers we are waiting are online.
-		this.waitingFor[newSubscriber.id] = true;
 		var allReady = true;
-		_.each(this.waitingFor, function(value, key) {
-			if (!value) {
+		if (typeof this.waitingFor[newSubscriber.id] != 'undefined') {
+			this.waitingFor[newSubscriber.id] = true;
+		}
+		for(var key in this.waitingFor) {
+			if (!this.waitingFor[key]) {
 				allReady = false;
+				break;
 			}
-		});
+		}
 		this.allSubscribersReady = allReady;
 
 		this.acknowledge(callback, {
@@ -176,6 +179,7 @@ MessageManager.prototype = {
 				break;
 			}
 		}
+		debugger;
 		if (this.waitingFor[sId]) {
 			this.waitingFor[sId] = false;
 			this.allSubscribersReady = false;
@@ -275,7 +279,7 @@ MessageManager.prototype = {
 	schedule: function() {
 		if (!this.allSubscribersReady) {
 			// Still waiting for some subscriber to join. Do nothing.
-			this.logger.info("Some subscriber(s) are not ready:\n" + JSON.stringify(this.waitingFor));
+			this.logger.info("Some subscriber(s) are not ready. Defer scheduling:\n" + JSON.stringify(this.waitingFor));
 			return;
 		}
 		Event.createInstance(this.db, this.eventSubscribers, function(eventObj) {
