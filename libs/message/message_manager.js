@@ -78,7 +78,9 @@ MessageManager.prototype = {
 			this.db = db;
 			var server = require('http').createServer();
 			server.listen(port, host ? host : "0.0.0.0");
-			this.io = require('socket.io').listen(server);
+			this.io = require('socket.io').listen(server, {
+				log: true
+			});
 			this.io.sockets.on('connection', function(socket) {
 				this.logger.info(util.format("[Connect]: Client connected: \"%s\".", socket.id));
 				// client subscribes an event
@@ -147,7 +149,7 @@ MessageManager.prototype = {
 		if (typeof this.waitingFor[newSubscriber.id] != 'undefined') {
 			this.waitingFor[newSubscriber.id] = true;
 		}
-		for(var key in this.waitingFor) {
+		for (var key in this.waitingFor) {
 			if (!this.waitingFor[key]) {
 				allReady = false;
 				break;
