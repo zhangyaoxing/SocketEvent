@@ -88,7 +88,7 @@ MessageManager.prototype = {
 					this.subscribe(socket, data, callback);
 
 					// auto-unsubscribe when disconnected.
-					socket.on("disconnect", function() {
+					socket.on("reconnecting", function() {
 						this.logger.info(util.format("Client [%s] disconnected. Unsubscribe event [%s]", data.senderId, data.event));
 						this.unsubscribe(data.event, data.senderId);
 					}.bind(this));
@@ -181,7 +181,6 @@ MessageManager.prototype = {
 				break;
 			}
 		}
-		debugger;
 		if (this.waitingFor[sId]) {
 			this.waitingFor[sId] = false;
 			this.allSubscribersReady = false;
