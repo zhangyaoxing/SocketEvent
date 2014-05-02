@@ -88,8 +88,9 @@ MessageManager.prototype = {
 					this.subscribe(socket, data, callback);
 
 					// auto-unsubscribe when disconnected.
-					socket.on("reconnecting", function() {
-						this.logger.info(util.format("Client [%s] disconnected. Unsubscribe event [%s]", data.senderId, data.event));
+					socket.on("disconnect", function() {
+						// debugger;
+						this.logger.info(util.format("Client [%s] disconnected. Unsubscribing event [%s]", data.senderId, data.event));
 						this.unsubscribe(data.event, data.senderId);
 					}.bind(this));
 				}.bind(this));
@@ -136,7 +137,8 @@ MessageManager.prototype = {
 		if (existed) {
 			// client already subscribed. close previous connection, use current one instead.
 			this.unsubscribe(data.event, data.senderId);
-			this.logger.warn("Client already connected.", getError("AlreadyConnected", existed.id));
+			this.logger.warn(util.format("Client [%s] already subscribed [%s].", data.senderId, data.event),
+				getError("AlreadyConnected", existed.id));
 		}
 		var newSubscriber = new Subscriber(this, {
 			id: data.senderId,
@@ -171,7 +173,6 @@ MessageManager.prototype = {
 	 */
 	unsubscribe: function(event, sId) {
 		var subscribers = this.eventSubscribers[event];
-		var subscriber = null;
 		for (var i = 0; i < subscribers.length; i++) {
 			var subscriber = subscribers[i];
 			if (subscriber.id == sId) {

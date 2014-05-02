@@ -70,11 +70,9 @@ Subscriber.prototype = {
 		}
 	},
 	dispose: function() {
-		if (this.socket.connected) {
-			this.socket.disconnect();
-		}
+		this.socket.disconnect();
 		this.state = SUBSCRIBER_STATE.DEAD;
-		this.logger.info("Subscriber [" + this.id + "] disposed.")
+		this.logger.info(util.format("Subscriber [%s][%s] disposed.", this.id, this.event));
 	}
 }
 
