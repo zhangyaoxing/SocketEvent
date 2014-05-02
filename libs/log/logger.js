@@ -43,5 +43,7 @@ Logger.prototype = (function() {
 })();
 
 exports.getLogger = function(category) {
-	return new Logger(log4js.getLogger(category));
+	var log4jsLogger = log4js.getLogger(category);
+	log4jsLogger.setLevel(log4js.levels.DEBUG);
+	return new Logger(log4jsLogger);
 };

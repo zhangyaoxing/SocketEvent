@@ -13,6 +13,7 @@ var REQUEST_RESULT = require("./base").REQUEST_RESULT;
 var Subscriber = require("./subscriber").Subscriber;
 var SUBSCRIBER_STATE = require("./subscriber").SUBSCRIBER_STATE;
 var Event = require("./event").Event;
+var levels = require("log4js").levels;
 
 function MessageManager() {
 	// sample data
@@ -79,10 +80,10 @@ MessageManager.prototype = {
 			var server = require('http').createServer();
 			server.listen(port, host ? host : "0.0.0.0");
 			this.io = require('socket.io').listen(server, {
-				log: true
+				log: false
 			});
 			this.io.sockets.on('connection', function(socket) {
-				this.logger.info(util.format("[Connect]: Client connected: \"%s\".", socket.id));
+				this.logger.info(util.format("[Connect]: Client connected: [%s].", socket.id));
 				// client subscribes an event
 				socket.on("subscribe", function(data, callback) {
 					this.subscribe(socket, data, callback);
@@ -103,6 +104,14 @@ MessageManager.prototype = {
 
 			// try to dispatch event every minutes
 			setInterval(this.schedule.bind(this), 60000);
+			var that = this;
+			setInterval(function() {
+				_.each(this.eventSubscribers, function(subscribers, event) {
+					ids = _.pluck(subscribers, "id");
+					that.logger.debug(util.format("Subscribers of [%s]: %s", event, ids.join(",")));
+				})
+				this.logger.debug(JSON.stringify(this.waitingFor));
+			}.bind(this), 60000);
 		}.bind(this));
 	},
 	/**
@@ -137,7 +146,7 @@ MessageManager.prototype = {
 		if (existed) {
 			// client already subscribed. close previous connection, use current one instead.
 			this.unsubscribe(data.event, data.senderId);
-			this.logger.warn(util.format("Client [%s] already subscribed [%s].", data.senderId, data.event),
+			this.logger.debug(util.format("Client [%s] already subscribed [%s].", data.senderId, data.event),
 				getError("AlreadyConnected", existed.id));
 		}
 		var newSubscriber = new Subscriber(this, {
