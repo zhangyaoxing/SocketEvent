@@ -112,7 +112,7 @@ MessageManager.prototype = {
 				})
 				this.logger.debug(JSON.stringify(this.waitingFor));
 			}.bind(this), 60000);
-			this.logger.Info("Listening on port 2900.");
+			this.logger.info("Listening on port 2900.");
 		}.bind(this));
 	},
 	/**
