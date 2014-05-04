@@ -17,11 +17,11 @@ function Event(db, record, subscribers) {
 	this.logger = getLogger("EventTrigger");
 
 	// looking up ready subscribers
-	var readySubscriberIds = [];
+	// var readySubscriberIds = [];
 	_.each(record.subscribers, function(s) {
 		// TODO: control the retry time.
 		if ((s.remainingTryTimes > 0 || s.remainingTryTimes == -1) && (s.state == STATE.READY || s.state == STATE.RETRY) && (s.lastOperateTime == null || (new Date() - s.lastOperateTime) > 60000)) {
-			readySubscriberIds.push(s.subscriberId);
+			// readySubscriberIds.push(s.subscriberId);
 			s.remainingTryTimes -= s.remainingTryTimes > 0 ? 1 : 0;
 			s.state = STATE.PROCESSING;
 			s.lastOperateTime = new Date();
@@ -29,16 +29,30 @@ function Event(db, record, subscribers) {
 	});
 
 	// get subscribers to be notified
-	this.subscribers = _.filter(subscribers, function(s) {
-		return _.contains(readySubscriberIds, s.id);
-	});
+	// this.subscribers = _.filter(subscribers, function(s) {
+	// 	return _.contains(readySubscriberIds, s.id);
+	// });
+	this.subscribers = subscribers
 }
 
 Event.prototype = {
 	_updateSubscriber: function(result) {
+		var subscriberFound = false;
 		var subscriberToBeUpdated = _.find(this.originalRecord.subscribers, function(s) {
 			return s.subscriberId == result.subscriberId;
 		});
+		subscriberFound = !!subscriberToBeUpdated;
+		if (!subscriberFound) {
+			// if it's not found in the original list
+			// it means the subscriber comes later than "enqueu" operation
+			// we need to add insert it to database
+			subscriberToBeUpdated = {
+				subscriberId: result.subscriberId,
+				remainingTryTimes: this.originalRecord.tryTimes - 1,
+				lastOperateTime: new Date()
+			};
+			this.originalRecord.subscribers.push(subscriberToBeUpdated);
+		}
 		switch (result.status) {
 			case REQUEST_RESULT.SUCCESS:
 				subscriberToBeUpdated.state = STATE.DONE;

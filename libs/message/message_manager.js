@@ -229,15 +229,15 @@ MessageManager.prototype = {
 			return;
 		}
 
-		// find out all the subscribers and prepare basic data for them.
-		var subscribers = _.map(this.eventSubscribers[data.event], function(elm) {
-			return {
-				subscriberId: elm.id,
-				remainingTryTimes: data.tryTimes,
-				state: STATE.READY,
-				lastOperateTime: null
-			}
-		});
+		// // find out all the subscribers and prepare basic data for them.
+		// var subscribers = _.map(this.eventSubscribers[data.event], function(elm) {
+		// 	return {
+		// 		subscriberId: elm.id,
+		// 		remainingTryTimes: data.tryTimes,
+		// 		state: STATE.READY,
+		// 		lastOperateTime: null
+		// 	}
+		// });
 		this._getCollection().insert({
 			"requestId": data.requestId,
 			"senderId": data.senderId,
@@ -247,7 +247,7 @@ MessageManager.prototype = {
 			"args": data.args,
 			"createAt": new Date(),
 			"state": STATE.READY,
-			"subscribers": subscribers
+			"subscribers": []
 		}, function(err, doc) {
 			if (err) {
 				this.logger.fatal("Database is not available to accept new requests.", err);
