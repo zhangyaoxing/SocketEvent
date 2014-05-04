@@ -14,7 +14,7 @@ var COLLECTION_NAME = require('../../config/default').queueCollectionName;
 function Event(db, record, subscribers) {
 	this.db = db;
 	this.originalRecord = record;
-	this.logger = getLogger();
+	this.logger = getLogger("EventTrigger");
 
 	// looking up ready subscribers
 	var readySubscriberIds = [];
@@ -133,6 +133,7 @@ Event.prototype = {
 };
 
 Event.createInstance = function(db, eventSubscribers, callback) {
+	var logger = getLogger("EventTrigger");
 	db.collection(COLLECTION_NAME).findAndModify({
 		"$or": [{
 			state: STATE.READY
@@ -149,7 +150,7 @@ Event.createInstance = function(db, eventSubscribers, callback) {
 		new: true
 	}, function(err, record) {
 		if (err) {
-			this.logger.fatal("Cannot update request state: READY/RETRY->PROCESSING.", err);
+			logger.fatal("Cannot update request state: READY/RETRY->PROCESSING.", err);
 			return;
 		}
 
