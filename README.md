@@ -16,7 +16,7 @@ npm install
 Configuration
 ===========
 Config file locates in /config/default.json
-```json
+```javascript
  {  
    "connections": {
      "url": "mongodb://127.0.0.1/SocketEvent" // database connection string
