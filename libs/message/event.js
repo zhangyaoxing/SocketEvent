@@ -14,14 +14,14 @@ var COLLECTION_NAME = require('../../config/default').queueCollectionName;
 function Event(db, record, subscribers) {
 	this.db = db;
 	this.originalRecord = record;
+	this.originalRecord.state = STATE.PROCESSING;
 	this.logger = getLogger("EventTrigger");
 
 	// looking up ready subscribers
-	// var readySubscriberIds = [];
+	var readySubscriberIds = [];
 	_.each(record.subscribers, function(s) {
-		// TODO: control the retry time.
 		if ((s.remainingTryTimes > 0 || s.remainingTryTimes == -1) && (s.state == STATE.READY || s.state == STATE.RETRY) && (s.lastOperateTime == null || (new Date() - s.lastOperateTime) > 60000)) {
-			// readySubscriberIds.push(s.subscriberId);
+			readySubscriberIds.push(s.subscriberId);
 			s.remainingTryTimes -= s.remainingTryTimes > 0 ? 1 : 0;
 			s.state = STATE.PROCESSING;
 			s.lastOperateTime = new Date();
@@ -29,10 +29,9 @@ function Event(db, record, subscribers) {
 	});
 
 	// get subscribers to be notified
-	// this.subscribers = _.filter(subscribers, function(s) {
-	// 	return _.contains(readySubscriberIds, s.id);
-	// });
-	this.subscribers = subscribers
+	this.subscribers = _.filter(subscribers, function(s) {
+		return _.contains(readySubscriberIds, s.id);
+	});
 }
 
 Event.prototype = {
@@ -41,7 +40,7 @@ Event.prototype = {
 		var subscriberToBeUpdated = _.find(this.originalRecord.subscribers, function(s) {
 			return s.subscriberId == result.subscriberId;
 		});
-		subscriberFound = !!subscriberToBeUpdated;
+		subscriberFound = !! subscriberToBeUpdated;
 		if (!subscriberFound) {
 			// if it's not found in the original list
 			// it means the subscriber comes later than "enqueu" operation
@@ -84,7 +83,9 @@ Event.prototype = {
 		// batch update all the subscriber status in current record to PROCESSING
 		this._getCollection().update({
 			"_id": this.originalRecord["_id"]
-		}, this.originalRecord, function(err) {
+		}, {
+			"$set": this.originalRecord.subscribers
+		}, function(err) {
 			if (err) {
 				// unable to update subscriber state from READY/RETRY to PROCESSING 
 				this.logger.fatal("Failed to update subscribers state: READY/RETRY->PROCESSING", err);
@@ -101,13 +102,14 @@ Event.prototype = {
 					}
 				}, function(err) {
 					if (err) {
-						this.logger.error("Failed to update record state PROCESSING->" + STATE.DONE + "\n" + this.originalRecord["_id"],
+						this.logger.error("Failed to update record state PROCESSING->" + this.originalRecord.state + "\n" + this.originalRecord["_id"],
 							getError("DatabaseUnavailable"));
 					}
 				}.bind(this));
 			}.bind(this);
 			var updated = 0;
 			if (this.subscribers.length == 0) {
+				// TODO: this is a bug
 				this.originalRecord.state = STATE.DONE;
 				finalizeDatabase();
 				return;
@@ -146,13 +148,29 @@ Event.prototype = {
 	}
 };
 
+/**
+ * Create an instance of Event.
+ * @param  {[type]}   db               [db connection used to access mongodb]
+ * @param  {[type]}   eventSubscribers [subscriber objects]
+ * @param  {Function} callback         [description]
+ * @return {[type]}                    [Event object]
+ */
 Event.createInstance = function(db, eventSubscribers, callback) {
 	var logger = getLogger("EventTrigger");
+	// TODO: if it's RETRY, there must be some subscriber available
 	db.collection(COLLECTION_NAME).findAndModify({
 		"$or": [{
 			state: STATE.READY
 		}, {
-			state: STATE.RETRY
+			state: STATE.RETRY,
+			subscriber: {
+				"$elemMatch": {
+					state: STATE.RETRY
+					lastOperateTime: {
+						"$lt": new Date() - 60000
+					}
+				}
+			}
 		}]
 	}, {
 		createAt: 1
@@ -161,7 +179,7 @@ Event.createInstance = function(db, eventSubscribers, callback) {
 			state: STATE.PROCESSING
 		}
 	}, {
-		new: true
+		new: false
 	}, function(err, record) {
 		if (err) {
 			logger.fatal("Cannot update request state: READY/RETRY->PROCESSING.", err);
@@ -170,7 +188,35 @@ Event.createInstance = function(db, eventSubscribers, callback) {
 
 		if (record) {
 			var subscribers = eventSubscribers[record.event];
-			callback(new Event(db, record, subscribers));
+			if (record.state == STATE.READY) {
+				// push current subscribers to notification list.
+				// map subscriber to json objects
+				record.subscribers = _.map(subscribers, function(elm) {
+					return {
+						subscriberId: elm.id,
+						remainingTryTimes: record.tryTimes,
+						state: STATE.READY
+					}
+				});
+
+				db.collection(COLLECTION_NAME).update({
+					"_id": record["_id"]
+				}, {
+					"$set": {
+						subscribers: record.subscribers
+					}
+				}, function(err) {
+					if (err) {
+						// TODO: revert request state.
+						logger.fatal("Cannot update subscriber list.", err);
+						return;
+					}
+					callback(new Event(db, record, subscribers));
+				});
+			} else {
+				// retrying, don't update subscriber list.
+				callback(new Event(db, record, subscribers));
+			}
 		} else {
 			callback(null);
 		}

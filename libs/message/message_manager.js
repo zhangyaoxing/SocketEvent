@@ -235,7 +235,6 @@ MessageManager.prototype = {
 		// 		subscriberId: elm.id,
 		// 		remainingTryTimes: data.tryTimes,
 		// 		state: STATE.READY,
-		// 		lastOperateTime: null
 		// 	}
 		// });
 		this._getCollection().insert({
