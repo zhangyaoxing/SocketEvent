@@ -163,7 +163,7 @@ Event.createInstance = function(db, eventSubscribers, callback) {
 			state: STATE.READY
 		}, {
 			state: STATE.RETRY,
-			subscriber: {
+			subscribers: {
 				"$elemMatch": {
 					state: STATE.RETRY
 					lastOperateTime: {
