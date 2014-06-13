@@ -104,12 +104,11 @@ MessageManager.prototype = {
 
 			// try to dispatch event every minutes
 			setInterval(this.schedule.bind(this), 60000);
-			var that = this;
 			setInterval(function() {
 				_.each(this.eventSubscribers, function(subscribers, event) {
 					ids = _.pluck(subscribers, "id");
 					that.logger.debug(util.format("Subscribers of [%s]: %s", event, ids.join(",")));
-				})
+				}.bind(this))
 				this.logger.debug(JSON.stringify(this.waitingFor));
 			}.bind(this), 60000);
 			this.logger.info("Listening on port 2900.");
