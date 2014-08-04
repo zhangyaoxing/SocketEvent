@@ -7,12 +7,12 @@
     },
     "dependencies": {
         "mongodb": "*",
-        "async": "*",
-        "config": "*",
-        "yaml": "*",
-        "underscore": "*",
-        "log4js": "*",
-        "socket.io": "*",
-        "socket.io-client":"*"
+        "async": "0.2.*",
+        "config": "0.4.*",
+        "yaml": "0.2.*",
+        "underscore": "1.6.*",
+        "log4js": "0.6.*",
+        "socket.io": "0.9.*",
+        "socket.io-client":"1.0.*"
     }
 }
