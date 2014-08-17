@@ -46,17 +46,14 @@ MessageManager.prototype = {
 			requestId: data.requestId,
 			status: REQUEST_RESULT.SUCCESS
 		};
+		
 		if (!data.requestId) {
 			result.error = getError("ArgumentError", "requestId");
 			result.status = REQUEST_RESULT.FAIL;
-		}
-
-		if (!data.event) {
+		} else if (!data.event) {
 			result.error = getError("ArgumentError", "event");
 			result.status = REQUEST_RESULT.FAIL;
-		}
-
-		if (!data.senderId) {
+		} else if (!data.senderId) {
 			result.error = getError("ArgumentError", "senderId");
 			result.status = REQUEST_RESULT.FAIL;
 		}
