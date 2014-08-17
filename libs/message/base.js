@@ -3,6 +3,7 @@ var COLLECTION_NAME = require('../../config/default').queueCollectionName;
 var MongoClient = require('mongodb').MongoClient;
 
 var STATE = {
+	PENDING: "PENDING",
 	READY: "READY",
 	PROCESSING: "PROCESSING",
 	DONE: "DONE",

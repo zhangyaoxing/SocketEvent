@@ -46,7 +46,7 @@ MessageManager.prototype = {
 			requestId: data.requestId,
 			status: REQUEST_RESULT.SUCCESS
 		};
-		
+
 		if (!data.requestId) {
 			result.error = getError("ArgumentError", "requestId");
 			result.status = REQUEST_RESULT.FAIL;
@@ -130,12 +130,15 @@ MessageManager.prototype = {
 			return;
 		}
 
+		// if there's no such event yet, create a queue for it.
 		if (!this.eventSubscribers[data.event]) {
 			this.eventSubscribers[data.event] = [];
 		}
 
 		var subscribers = this.eventSubscribers[data.event];
+
 		// check if this client has subscribed before
+		// TODO: potential performance issue
 		var existed = _.find(subscribers, function(s) {
 			return s.id == data.senderId;
 		});
@@ -143,15 +146,18 @@ MessageManager.prototype = {
 		if (existed) {
 			// client already subscribed. close previous connection, use current one instead.
 			this.unsubscribe(data.event, data.senderId);
-			this.logger.debug(util.format("Client [%s] already subscribed [%s].", data.senderId, data.event),
-				getError("AlreadyConnected", existed.id));
+			var msg = util.format("Client [%s] already subscribed [%s].", data.senderId, data.event);
+			var err = getError("AlreadyConnected", existed.id);
+			this.logger.debug(msg, err);
 		}
+
 		var newSubscriber = new Subscriber(this, {
 			id: data.senderId,
 			socket: socket,
 			event: data.event
 		});
 		subscribers.push(newSubscriber);
+
 		// check if all the subscribers we are waiting are online.
 		var allReady = true;
 		if (typeof this.waitingFor[newSubscriber.id] != 'undefined') {
@@ -170,6 +176,32 @@ MessageManager.prototype = {
 			status: REQUEST_RESULT.SUCCESS
 		});
 		this.logger.info(util.format("[Subscribe]: Client \"%s\" subscribed event \"%s\".", data.senderId, data.event));
+
+		// if all subscribers are ready, PENDING events should be updated
+		_.each(function(subscribers, event) {
+			// map subscriber to json objects
+			var subscribersRec = _.map(subscribers, function(elm) {
+				return {
+					subscriberId: elm.id,
+					remainingTryTimes: record.tryTimes,
+					state: STATE.READY
+				}
+			});
+			this._getCollection().update({
+				state: STATE.PENDING
+			}, {
+				$set: {
+					subscribers: subscribersRec
+				}
+			}, {
+				multi: true
+			}, function(err) {
+				if (err) {
+					this.logger.fatal("Database is not available to change. state: PENDING -> READY. event: " + event, err);
+					// TODO: retry it later.
+				}
+			}.bind(this));
+		}.bind(this));
 	},
 	/**
 	 * Unsubscribe by event and subscriber ID.
@@ -233,17 +265,33 @@ MessageManager.prototype = {
 		// 		state: STATE.READY,
 		// 	}
 		// });
-		this._getCollection().insert({
+		var record = {
 			"requestId": data.requestId,
 			"senderId": data.senderId,
 			"tryTimes": data.tryTimes,
 			"timeout": (data.timeout ? data.timeout : 60) * 1000,
 			"event": data.event,
 			"args": data.args,
-			"createAt": new Date(),
-			"state": STATE.READY,
-			"subscribers": []
-		}, function(err, doc) {
+			"createAt": new Date()
+		};
+
+		// record state varies depends on whether all subscribers are ready.
+		if (this.allSubscribersReady) {
+			var subscribers = eventSubscribers[record.event];
+			record.state = STATE.READY;
+			// map subscriber to json objects
+			record.subscribers = _.map(subscribers, function(elm) {
+				return {
+					subscriberId: elm.id,
+					remainingTryTimes: record.tryTimes,
+					state: STATE.READY
+				}
+			});
+		} else {
+			record.state = STATE.PENDING;
+			record.subscribers = [];
+		}
+		this._getCollection().insert(record, function(err, doc) {
 			if (err) {
 				this.logger.fatal("Database is not available to accept new requests.", err);
 				this.acknowledge(callback, {
@@ -284,13 +332,9 @@ MessageManager.prototype = {
 		callback(result);
 	},
 	schedule: function() {
-		if (!this.allSubscribersReady) {
-			// Still waiting for some subscriber to join. Do nothing.
-			this.logger.info("Some subscriber(s) are not ready. Defer scheduling:\n" + JSON.stringify(this.waitingFor));
-			return;
-		}
-		Event.createInstance(this.db, this.eventSubscribers, function(eventObj) {
+		Event.createInstance(this, function(eventObj) {
 			if (eventObj) {
+				// more data waiting for scheduling, do it again after 10ms.
 				setTimeout(this.schedule.bind(this), 10);
 				eventObj.dispatch();
 			}

@@ -40,7 +40,7 @@ Event.prototype = {
 		var subscriberToBeUpdated = _.find(this.originalRecord.subscribers, function(s) {
 			return s.subscriberId == result.subscriberId;
 		});
-		subscriberFound = !! subscriberToBeUpdated;
+		subscriberFound = !!subscriberToBeUpdated;
 		if (!subscriberFound) {
 			// if it's not found in the original list
 			// it means the subscriber comes later than "enqueu" operation
@@ -155,71 +155,71 @@ Event.prototype = {
  * @param  {Function} callback         [description]
  * @return {[type]}                    [Event object]
  */
-Event.createInstance = function(db, eventSubscribers, callback) {
+Event.createInstance = function(manager, callback) {
+	if (!manager.allSubscribersReady) {
+		// Still waiting for some subscriber to join. Do nothing.
+		this.logger.info("Some subscriber(s) are not ready. Defer scheduling:");
+		this.logger.info(JSON.stringify(this.waitingFor));
+		callback(null);
+		return;
+	}
 	var logger = getLogger("EventTrigger");
+	var db = manager.db;
+	var eventSubscribers = manager.eventSubscribers;
+
 	// TODO: if it's RETRY, there must be some subscriber available
 	db.collection(COLLECTION_NAME).findAndModify({
 		"$or": [{
 			state: STATE.READY
 		}, {
-			state: STATE.RETRY,
-			subscribers: {
-				"$elemMatch": {
-					state: STATE.RETRY
-					lastOperateTime: {
-						"$lt": new Date() - 60000
-					}
-				}
-			}
+			state: STATE.RETRY
 		}]
 	}, {
 		createAt: 1
 	}, {
 		"$set": {
-			state: STATE.PROCESSING
+			state: STATE.PROCESSING,
+			lastOperateTime: new Date()
 		}
 	}, {
 		new: false
 	}, function(err, record) {
 		if (err) {
-			logger.fatal("Cannot update request state: READY/RETRY->PROCESSING.", err);
+			logger.fatal("Cannot update request state: READY/RETRY->PROCESSING. (No manual operation required)", err);
+			callback(null);
+			return;
+		}
+		if (!record) {
+			callback(null);
 			return;
 		}
 
-		if (record) {
-			var subscribers = eventSubscribers[record.event];
-			if (record.state == STATE.READY) {
-				// push current subscribers to notification list.
-				// map subscriber to json objects
-				record.subscribers = _.map(subscribers, function(elm) {
-					return {
-						subscriberId: elm.id,
-						remainingTryTimes: record.tryTimes,
-						state: STATE.READY
-					}
-				});
+		// allSubscribersReady can change while waiting for database query
+		if (!manager.allSubscribersReady) {
+			logger.info("Critical subscriber(s) unsubscribed. Deferring event scheduling.");
+			logger.info(JSON.stringify(this.waitingFor));
 
-				db.collection(COLLECTION_NAME).update({
-					"_id": record["_id"]
-				}, {
-					"$set": {
-						subscribers: record.subscribers
-					}
-				}, function(err) {
-					if (err) {
-						// TODO: revert request state.
-						logger.fatal("Cannot update subscriber list.", err);
-						return;
-					}
-					callback(new Event(db, record, subscribers));
-				});
-			} else {
-				// retrying, don't update subscriber list.
-				callback(new Event(db, record, subscribers));
-			}
-		} else {
-			callback(null);
+			// rollback state change
+			db.collection(COLLECTION_NAME).update({
+				_id: record._id
+			}, {
+				$set: {
+					state: record.state
+				}
+			}, function(err) {
+				if (err) {
+					var msg = util.format("Deferring event scheduling failed because of database error.\n\
+						This requires manual fixing. Record ID: %s", record._id);
+					logger.fatal(msg, err);
+				}
+				callback(null);
+				return;
+			});
+			return;
 		}
+
+		logger.debug(util.format("Going to dispatch event _id: %s", record._id));
+		callback(new Event(db, record, subscribers));
 	});
 };
 
