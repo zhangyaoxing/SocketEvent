@@ -334,8 +334,8 @@ MessageManager.prototype = {
 	schedule: function() {
 		Event.createInstance(this, function(eventObj) {
 			if (eventObj) {
-				// more data waiting for scheduling, do it again after 10ms.
-				setTimeout(this.schedule.bind(this), 10);
+				// more data waiting for scheduling, do it again in the next tick.
+				process.nextTick(this.schedule.bind(this));
 				eventObj.dispatch();
 			}
 		}.bind(this))

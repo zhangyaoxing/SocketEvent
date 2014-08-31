@@ -9,8 +9,13 @@ var STATE = require("./base").STATE;
 var REQUEST_RESULT = require("./base").REQUEST_RESULT;
 var COLLECTION_NAME = require('../../config/default').queueCollectionName;
 
-// find the earliest event with status READY or RETRY.
-// only one record is proceeded at one time.
+/**
+ * find the earliest event with status READY or RETRY.
+ * only one record is proceeded at one time.
+ * @param {Object} db          DB Connection.
+ * @param {Object} record      Event record from database.
+ * @param {Array} subscribers Event subscribers.
+ */
 function Event(db, record, subscribers) {
 	this.db = db;
 	this.originalRecord = record;
@@ -18,20 +23,23 @@ function Event(db, record, subscribers) {
 	this.logger = getLogger("EventTrigger");
 
 	// looking up ready subscribers
-	var readySubscriberIds = [];
+	this.subscribers = [];
 	_.each(record.subscribers, function(s) {
-		if ((s.remainingTryTimes > 0 || s.remainingTryTimes == -1) && (s.state == STATE.READY || s.state == STATE.RETRY) && (s.lastOperateTime == null || (new Date() - s.lastOperateTime) > 60000)) {
-			readySubscriberIds.push(s.subscriberId);
-			s.remainingTryTimes -= s.remainingTryTimes > 0 ? 1 : 0;
-			s.state = STATE.PROCESSING;
-			s.lastOperateTime = new Date();
+		// TODO: control retry delay. hard coded to 60s now.
+		if ((s.remainingTryTimes > 0 || s.remainingTryTimes == -1) 
+			&& (s.state == STATE.READY || s.state == STATE.RETRY) 
+			&& (!s.lastOperateTime || (new Date() - s.lastOperateTime) > 60000)) {
+			var subscriber = subscribers[s.subscriberId];
+			if (subscriber) {
+				// readySubscriberIds.push(s.subscriberId);
+				// -1 & 0 remains the same. otherwise decrease 1
+				s.remainingTryTimes -= s.remainingTryTimes > 0 ? 1 : 0;
+				s.state = STATE.PROCESSING;
+				s.lastOperateTime = new Date();
+				this.subscribers.push(subscriber);
+			}
 		}
-	});
-
-	// get subscribers to be notified
-	this.subscribers = _.filter(subscribers, function(s) {
-		return _.contains(readySubscriberIds, s.id);
-	});
+	}.bind(this));
 }
 
 Event.prototype = {
@@ -84,7 +92,9 @@ Event.prototype = {
 		this._getCollection().update({
 			"_id": this.originalRecord["_id"]
 		}, {
-			"$set": this.originalRecord.subscribers
+			"$set": {
+				subscribers: this.originalRecord.subscribers
+			}
 		}, function(err) {
 			if (err) {
 				// unable to update subscriber state from READY/RETRY to PROCESSING 
@@ -109,7 +119,6 @@ Event.prototype = {
 			}.bind(this);
 			var updated = 0;
 			if (this.subscribers.length == 0) {
-				// TODO: this is a bug
 				this.originalRecord.state = STATE.DONE;
 				finalizeDatabase();
 				return;
@@ -185,11 +194,12 @@ Event.createInstance = function(manager, callback) {
 		new: false
 	}, function(err, record) {
 		if (err) {
-			logger.fatal("Cannot update request state: READY/RETRY->PROCESSING. (No manual operation required)", err);
+			logger.fatal("Cannot update request state: READY/RETRY->PROCESSING. (No further operation required)", err);
 			callback(null);
 			return;
 		}
 		if (!record) {
+			// No more event to handle.
 			callback(null);
 			return;
 		}
@@ -219,6 +229,7 @@ Event.createInstance = function(manager, callback) {
 		}
 
 		logger.debug(util.format("Going to dispatch event _id: %s", record._id));
+		var subscribers = _.indexBy(eventSubscribers[record.event], "id");
 		callback(new Event(db, record, subscribers));
 	});
 };
